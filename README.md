@@ -1,2 +1,2 @@
 # bur
-Bored os' package manager
+THE Bored os' package manager
