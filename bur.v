@@ -30,6 +30,9 @@ fn main() {
             }
             install_function(args[2])
         }
+        'update' {
+            update_function()
+        }
         'upgrade' {
             if args.len < 3 {
                 println('error: please provide a package name')
@@ -76,7 +79,7 @@ fn install_function(name string) {
 }
 
 fn update_function() {
-    println('checking mirror for upd's)
+    println('checking mirror for upds')
 
     manifest_url := 'https://inserthis/manifest.txt'
     resp := http.get(manifest_url) or {
@@ -96,7 +99,6 @@ fn update_function() {
     }
     println('done! packge list refreshed run bur upgrade [name] to see if it needs a upd')
 }
-
 
 fn upgrade_function(name string) {
     hash_url := 'https://inserthis/' + name + '.hash'
@@ -121,6 +123,31 @@ fn upgrade_function(name string) {
     
     os.mkdir_all('/var/db/bur/') or { }
     os.write_file(hash_path, remote_hash) or { }
+}
+
+fn remove_function(name string) {
+    if name == '' {
+        println('hey say a package to remove!')
+        return
+    }
+
+    println('removing $name play the bugle ;_;')
+
+    executable_path:= '/bin/$name.elf'
+    if os.exists(executable_path) {
+        os.rm(executable_path) or {
+            println('oh crud could not remove the binary')
+        }
+    } else {
+        println('HEY $name.elf was not found in /bin/!')
+    }
+
+    hash_path := '/var/db/bur' + name + '.hash'
+    if os.exists(hash_path) {
+        os.rm(hash_path) or { }
+    }
+
+    println('rip $name it has been removed')    
 }
 
 //yello this is the bottom of the file
