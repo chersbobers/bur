@@ -1,3 +1,14 @@
+/*
+ *    ░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░  
+ *    ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
+ *    ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
+ *    ░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░  
+ *    ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
+ *    ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
+ *    ░▒▓███████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░ 
+ *    ascii art from: https://patorjk.com/software/taag/ :)                     
+ */
+
 import os
 import net.http
 
@@ -5,7 +16,7 @@ fn main() {
     args := os.args
 
     if args.len < 2 {
-        println('commands: bur [install|update|remove]')
+        println('commands: bur [install|update|upgrade|remove]')
         return
     }
 
@@ -19,8 +30,15 @@ fn main() {
             }
             install_function(args[2])
         }
+        'upgrade' {
+            if args.len < 3 {
+                println('error: please provide a package name')
+                return
+            }
+            upgrade_function(args[2])
+        }
         else {
-            println('unknown command')
+            println('commands: bur [install|update|upgrade|remove]')
         }
     }
 }
@@ -29,7 +47,7 @@ fn install_function(name string) {
     url := 'needtoadd' + name + '.c'
 
     resp := http.get(url) or {
-        println('error couldnt connect to server sorry!!;')
+        println('error couldnt connect to server sorry!!')
         return
     }
 
@@ -56,3 +74,53 @@ fn install_function(name string) {
         println(res.output)
     }
 }
+
+fn update_function() {
+    println('checking mirror for upd's)
+
+    manifest_url := 'https://inserthis/manifest.txt'
+    resp := http.get(manifest_url) or {
+        println('sorry could not reach the server')
+        return
+    }
+    
+    if resp.status_code != 200 {
+        println('error failed to fetch the package list')
+        return
+    }
+
+    os.mkdir_all('/var/db/bur/') or { }
+    os.write_file('/var/db/bur/manifest.txt', resp.body) or {
+        println('failed to save manifest :(')
+        return
+    }
+    println('done! packge list refreshed run bur upgrade [name] to see if it needs a upd')
+}
+
+
+fn upgrade_function(name string) {
+    hash_url := 'https://inserthis/' + name + '.hash'
+    resp := http.get(hash_url) or { 
+        println('error: could not check remote hash')
+        return 
+    }
+    remote_hash := resp.body.trim_space()
+
+    hash_path := '/var/db/bur/' + name + '.hash'
+    if os.exists(hash_path) {
+        local_hash := os.read_file(hash_path) or { '' }.trim_space()
+
+        if local_hash == remote_hash {
+            println('$name is latest version not upgrading')
+            return
+        }
+    }
+
+    println('new version of $name found upgrading now')
+    install_function(name)
+    
+    os.mkdir_all('/var/db/bur/') or { }
+    os.write_file(hash_path, remote_hash) or { }
+}
+
+//yello this is the bottom of the file
